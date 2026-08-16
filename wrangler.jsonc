@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pigeonmail",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-10-22",
+  "assets": {
+    "directory": "./public"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pigeonmail-db",
+      "database_id": "f4712b70-45d5-45ab-979c-7f72444dea14"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ATTACHMENTS_BUCKET",
+      "bucket_name": "pigeonmail-attachments"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "SECTOR_EMAIL"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MAILBOX_DO",
+        "class_name": "MailboxDO"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "MailboxDO"
+      ]
+    }
+  ]
+}

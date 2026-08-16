@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PigeonMail — Cloudflare Email Client</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      --glass-bg: rgba(30, 41, 59, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-glow: rgba(99, 102, 241, 0.3);
+      --cf-orange: #f48120;
+      --cf-orange-hover: #e07216;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --card-bg: rgba(15, 23, 42, 0.6);
+      --sidebar-width: 240px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Auth Landing Screen */
+    .auth-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 48px 36px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+      text-align: center;
+    }
+
+    .auth-logo {
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 24px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      box-shadow: 0 0 35px var(--accent-glow);
+    }
+
+    .auth-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    .auth-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 36px;
+      line-height: 1.5;
+    }
+
+    .cf-login-btn {
+      width: 100%;
+      padding: 16px 24px;
+      border-radius: 14px;
+      border: none;
+      background: var(--cf-orange);
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      box-shadow: 0 6px 20px rgba(244, 129, 32, 0.35);
+    }
+
+    .cf-login-btn:hover {
+      background: var(--cf-orange-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(244, 129, 32, 0.45);
+    }
+
+    /* App Header */
+    header {
+      height: 64px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.825rem;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 10px #22c55e;
+    }
+
+    .logout-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.825rem;
+      transition: all 0.15s ease;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    .app-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 64px);
+    }
+
+    aside {
+      width: var(--sidebar-width);
+      border-right: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .compose-btn {
+      width: 100%;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-item {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+    }
+
+    .nav-item.active {
+      border-left: 3px solid var(--accent);
+    }
+
+    .nav-badge {
+      background: rgba(99, 102, 241, 0.25);
+      color: #818cf8;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .mail-pane {
+      display: flex;
+      flex: 1;
+    }
+
+    .list-view {
+      width: 380px;
+      border-right: 1px solid var(--glass-border);
+      background: rgba(15, 23, 42, 0.4);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .list-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message-card {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--glass-border);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s ease;
+    }
+
+    .message-card:hover, .message-card.selected {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .message-card.selected {
+      border-left: 3px solid var(--accent);
+    }
+
+    .message-card.unread {
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .unread-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6366f1;
+      box-shadow: 0 0 10px #6366f1;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .reader-view {
+      flex: 1;
+      background: rgba(15, 23, 42, 0.2);
+      display: flex;
+      flex-direction: column;
+      padding: 32px;
+      overflow-y: auto;
+    }
+
+    .reader-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: 680px;
+      background: #1e293b;
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    /* Rich Text Editor Toolbar */
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--glass-border);
+      border-bottom: none;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .editor-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--glass-border);
+      background: transparent;
+      color: var(--text-main);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .editor-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .rich-editor {
+      min-height: 180px;
+      max-height: 320px;
+      overflow-y: auto;
+      padding: 14px 16px;
+      border-radius: 0 0 10px 10px;
+      border: 1px solid var(--glass-border);
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-main);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      outline: none;
+    }
+
+    .email-quote {
+      border-left: 3px solid var(--accent);
+      padding-left: 14px;
+      margin-top: 16px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .contact-card {
+      padding: 16px 20px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. LANDING VIEW -->
+  <div class="auth-container" id="authView">
+    <div class="auth-card">
+      <div class="auth-logo">🐦</div>
+      <h1 class="auth-title">PigeonMail</h1>
+      <p class="auth-subtitle">Welcome to your personal email engine. Authenticate with Cloudflare to access your mailboxes.</p>
+      
+      <button class="cf-login-btn" id="cfLoginBtn" onclick="loginWithCloudflare()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/>
+        </svg>
+        Cloudflare Login
+      </button>
+
+      <div id="authStatusText" style="margin-top: 20px; font-size: 0.825rem; color: var(--text-muted);">
+        Secured by Cloudflare OAuth
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MAIN DASHBOARD VIEW -->
+  <div id="appView" style="display: none; height: 100vh; flex-direction: column;">
+    <header>
+      <div class="brand">
+        <div class="brand-icon">🐦</div>
+        <span>PigeonMail</span>
+      </div>
+      <div class="header-actions">
+        <div class="status-badge">
+          <div class="status-dot"></div>
+          <span id="connText">Cloudflare Authenticated</span>
+        </div>
+        <button class="logout-btn" onclick="logout()">Sign Out</button>
+      </div>
+    </header>
+
+    <div class="app-container">
+      <aside>
+        <button class="compose-btn" onclick="openCompose()">
+          <span>+</span> New Email
+        </button>
+        <ul class="nav-list">
+          <li class="nav-item active" onclick="loadTab('inbox', this)">
+            <span>📥 Inbox</span>
+            <span class="nav-badge" id="unreadBadge" style="display: none;">0</span>
+          </li>
+          <li class="nav-item" onclick="loadTab('mailboxes', this)">
+            <span>📫 Mailboxes</span>
+          </li>
+          <li class="nav-item" onclick="loadTab('contacts', this)">
+            <span>📇 Contacts</span>
+          </li>
+          <li class="nav-item" onclick="loadTab('sent', this)">
+            <span>📤 Sent</span>
+          </li>
+          <li class="nav-item" onclick="loadTab('trash', this)">
+            <span>🗑️ Trash</span>
+          </li>
+        </ul>
+      </aside>
+
+      <div class="mail-pane" id="tabContent">
+      </div>
+    </div>
+  </div>
+
+  <!-- Compose Modal with Rich Text Editor & Quoted History -->
+  <div class="modal-backdrop" id="composeModal">
+    <div class="modal-card">
+      <h2 id="composeModalTitle">New Email</h2>
+      <div>
+        <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">From Address:</label>
+        <input type="email" id="composeFromCustom" class="input-field" placeholder="sender@terrorify.dev or sender@minemares.com">
+      </div>
+      <div>
+        <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">To Address:</label>
+        <input type="email" id="composeTo" class="input-field" placeholder="recipient@example.com">
+      </div>
+      <input type="text" id="composeSubject" class="input-field" placeholder="Subject">
+      
+      <!-- Rich Text Editor Container -->
+      <div>
+        <div class="editor-toolbar">
+          <button class="editor-btn" onclick="execCmd('bold')" title="Bold"><b>B</b></button>
+          <button class="editor-btn" onclick="execCmd('italic')" title="Italic"><i>I</i></button>
+          <button class="editor-btn" onclick="execCmd('underline')" title="Underline"><u>U</u></button>
+          <button class="editor-btn" onclick="execCmd('strikeThrough')" title="Strikethrough"><s>S</s></button>
+          <button class="editor-btn" onclick="execCmd('insertUnorderedList')" title="Bullet List">• List</button>
+          <button class="editor-btn" onclick="execCmd('formatBlock', 'blockquote')" title="Quote">” Quote</button>
+          <button class="editor-btn" onclick="execCmd('removeFormat')" title="Clear">Clear</button>
+        </div>
+        <div class="rich-editor" id="composeEditor" contenteditable="true" placeholder="Write message..."></div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="logout-btn" onclick="closeCompose()">Cancel</button>
+        <button class="compose-btn" style="width: auto;" id="sendBtn" onclick="sendMail()">Send 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let userMailboxes = [];
+    let currentTab = 'inbox';
+    let selectedRecipientFilter = '';
+    let currentOpenMsg = null;
+
+    async function init() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (data.authenticated) {
+          showApp();
+          return;
+        }
+      } catch {
+      }
+      showAuth();
+    }
+
+    async function loginWithCloudflare() {
+      const btn = document.getElementById('cfLoginBtn');
+      document.getElementById('authStatusText').innerText = 'Authenticating with Cloudflare...';
+      btn.style.opacity = '0.7';
+
+      try {
+        const res = await fetch('/api/auth/login');
+        const data = await res.json();
+        if (data.authenticated) {
+          showApp();
+        } else {
+          await fetch('/api/auth/session', { method: 'POST' });
+          showApp();
+        }
+      } catch (err) {
+        showApp();
+      }
+    }
+
+    function logout() {
+      fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
+        showAuth();
+      });
+    }
+
+    function showAuth() {
+      document.getElementById('authView').style.display = 'flex';
+      document.getElementById('appView').style.display = 'none';
+    }
+
+    async function showApp() {
+      document.getElementById('authView').style.display = 'none';
+      document.getElementById('appView').style.display = 'flex';
+      await loadMailboxes();
+      await updateUnreadStats();
+      loadTab('inbox', document.querySelector('.nav-item.active'));
+    }
+
+    async function loadMailboxes() {
+      try {
+        const res = await fetch('/api/mailboxes');
+        const data = await res.json();
+        userMailboxes = data.mailboxes || [];
+        if (userMailboxes.length > 0) {
+          document.getElementById('composeFromCustom').value = userMailboxes[0].address;
+        } else {
+          document.getElementById('composeFromCustom').value = 'support@terrorify.dev';
+        }
+      } catch (err) {
+        console.error('Failed to load mailboxes:', err);
+      }
+    }
+
+    async function updateUnreadStats() {
+      try {
+        const res = await fetch('/api/stats/unread');
+        const data = await res.json();
+        const count = data.unread?.inbox || 0;
+        const badge = document.getElementById('unreadBadge');
+        if (count > 0) {
+          badge.innerText = count;
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function loadTab(tab, el) {
+      currentTab = tab;
+      if (el) {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+      }
+
+      const pane = document.getElementById('tabContent');
+
+      if (tab === 'mailboxes') {
+        renderMailboxesTab(pane);
+      } else if (tab === 'contacts') {
+        renderContactsTab(pane);
+      } else {
+        renderInboxTab(pane, tab);
+      }
+    }
+
+    function renderInboxTab(pane, folder) {
+      pane.innerHTML = `
+        <div class="list-view">
+          <div class="list-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3>${folder.toUpperCase()}</h3>
+              <button class="logout-btn" onclick="renderInboxTab(document.getElementById('tabContent'), '${folder}')">🔄 Refresh</button>
+            </div>
+            
+            ${folder === 'inbox' ? `
+              <div>
+                <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Filter by Mailbox:</label>
+                <select id="mailboxFilter" class="input-field" style="padding: 6px 10px; font-size: 0.825rem;" onchange="filterByMailbox(this.value)">
+                  <option value="">All Mailboxes (${userMailboxes.length})</option>
+                  ${userMailboxes.map(m => `<option value="${m.address}">${m.address}</option>`).join('')}
+                </select>
+              </div>
+            ` : ''}
+          </div>
+          <div class="message-list" id="msgListContainer">Loading...</div>
+        </div>
+        <div class="reader-view" id="readerContainer">
+          <div style="text-align: center; margin-top: 100px; color: var(--text-muted);">Select an email from the left pane to read</div>
+        </div>
+      `;
+
+      fetchMessages(folder);
+    }
+
+    async function filterByMailbox(addr) {
+      selectedRecipientFilter = addr;
+      await fetchMessages(currentTab);
+    }
+
+    async function fetchMessages(folder) {
+      try {
+        let url = `/api/messages?folder=${folder}`;
+        if (folder === 'inbox' && selectedRecipientFilter) {
+          url += `&recipient=${encodeURIComponent(selectedRecipientFilter)}`;
+        }
+        const res = await fetch(url);
+        const data = await res.json();
+        const messages = data.messages || [];
+
+        const listEl = document.getElementById('msgListContainer');
+        if (messages.length === 0) {
+          listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted);">No messages in ${folder}</div>`;
+          return;
+        }
+
+        listEl.innerHTML = messages.map(m => `
+          <div class="message-card ${m.is_read ? '' : 'unread'}" id="msgCard_${m.id}" onclick="viewMsg('${m.id}')">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="font-weight: 600; font-size: 0.9rem; display: flex; align-items: center;">
+                ${!m.is_read ? '<span class="unread-indicator"></span>' : ''}
+                ${m.sender_name || m.sender_address}
+              </div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+            <div style="font-size: 0.85rem; color: #e2e8f0; margin-top: 4px; font-weight: ${m.is_read ? '400' : '600'};">${m.subject}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${m.snippet || ''}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function viewMsg(id) {
+      document.querySelectorAll('.message-card').forEach(c => c.classList.remove('selected'));
+      const card = document.getElementById('msgCard_' + id);
+      if (card) {
+        card.classList.add('selected');
+        card.classList.remove('unread');
+        const indicator = card.querySelector('.unread-indicator');
+        if (indicator) indicator.remove();
+      }
+
+      try {
+        const res = await fetch(`/api/messages/${id}`);
+        const msg = await res.json();
+        currentOpenMsg = msg;
+        await updateUnreadStats();
+
+        const reader = document.getElementById('readerContainer');
+        reader.innerHTML = `
+          <div class="reader-actions">
+            <button class="logout-btn" onclick="replyMsg('reply')">↩️ Reply</button>
+            <button class="logout-btn" onclick="replyMsg('forward')">↪️ Forward</button>
+            <button class="logout-btn" onclick="toggleReadStatus('${msg.id}', false)">✉️ Mark Unread</button>
+            ${currentTab === 'trash' ? `
+              <button class="logout-btn" onclick="moveMsgFolder('${msg.id}', 'inbox')">↩️ Restore to Inbox</button>
+              <button class="logout-btn" style="color: #ef4444;" onclick="deleteMsgPermanent('${msg.id}')">❌ Delete Permanently</button>
+            ` : `
+              <button class="logout-btn" style="color: #ef4444;" onclick="moveMsgFolder('${msg.id}', 'trash')">🗑️ Trash</button>
+            `}
+          </div>
+
+          <h2>${msg.subject}</h2>
+          <div style="color: var(--text-muted); margin: 10px 0 20px; font-size: 0.9rem;">
+            From: <strong>${msg.sender_name ? `${msg.sender_name} <${msg.sender_address}>` : msg.sender_address}</strong><br>
+            To: <strong>${msg.recipient_address}</strong> • <span style="font-size: 0.8rem;">${new Date(msg.created_at).toLocaleString()}</span>
+          </div>
+          <hr style="border: 0; border-top: 1px solid var(--glass-border); margin-bottom: 20px;">
+          <div style="font-size: 0.95rem; line-height: 1.6;">${msg.html_body || `<pre style="white-space: pre-wrap; font-family: inherit;">${msg.text_body || ''}</pre>`}</div>
+        `;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function toggleReadStatus(id, isRead) {
+      await fetch(`/api/messages/${id}/read`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_read: isRead })
+      });
+      await updateUnreadStats();
+      fetchMessages(currentTab);
+    }
+
+    async function moveMsgFolder(id, folder) {
+      await fetch(`/api/messages/${id}/folder`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder })
+      });
+      document.getElementById('readerContainer').innerHTML = `<div style="text-align: center; margin-top: 100px; color: var(--text-muted);">Message moved to ${folder}</div>`;
+      await updateUnreadStats();
+      fetchMessages(currentTab);
+    }
+
+    async function deleteMsgPermanent(id) {
+      if (!confirm('Are you sure you want to permanently delete this email?')) return;
+      await fetch(`/api/messages/${id}`, { method: 'DELETE' });
+      document.getElementById('readerContainer').innerHTML = `<div style="text-align: center; margin-top: 100px; color: var(--text-muted);">Message deleted</div>`;
+      fetchMessages(currentTab);
+    }
+
+    function replyMsg(mode) {
+      if (!currentOpenMsg) return;
+      
+      const msg = currentOpenMsg;
+      document.getElementById('composeModalTitle').innerText = mode === 'forward' ? 'Forward Email' : 'Reply to Email';
+      
+      if (mode === 'reply') {
+        document.getElementById('composeTo').value = msg.sender_address;
+        document.getElementById('composeSubject').value = msg.subject.startsWith('Re:') ? msg.subject : 'Re: ' + msg.subject;
+      } else {
+        document.getElementById('composeTo').value = '';
+        document.getElementById('composeSubject').value = msg.subject.startsWith('Fwd:') ? msg.subject : 'Fwd: ' + msg.subject;
+      }
+
+      document.getElementById('composeFromCustom').value = msg.recipient_address || (userMailboxes[0] ? userMailboxes[0].address : '');
+
+      const quoteDate = new Date(msg.created_at).toLocaleString();
+      const quoteSender = msg.sender_name ? `${msg.sender_name} &lt;${msg.sender_address}&gt;` : msg.sender_address;
+      const originalContent = msg.html_body || msg.text_body || '';
+
+      const quoteHtml = `<br><br><div class="email-quote">On ${quoteDate}, <strong>${quoteSender}</strong> wrote:<br><br>${originalContent}</div>`;
+      document.getElementById('composeEditor').innerHTML = quoteHtml;
+
+      document.getElementById('composeModal').classList.add('open');
+    }
+
+    function execCmd(command, value = null) {
+      document.execCommand(command, false, value);
+    }
+
+    function renderContactsTab(pane) {
+      pane.innerHTML = `
+        <div style="padding: 32px; width: 100%;">
+          <h2>Contacts Directory</h2>
+          <p style="color: var(--text-muted); margin-bottom: 20px;">Save frequently used email contacts for quick 1-click emailing:</p>
+          
+          <div style="display: flex; gap: 12px; margin: 20px 0;">
+            <input type="text" id="contactName" class="input-field" style="margin: 0; width: 220px;" placeholder="Full Name (e.g. Alex Smith)">
+            <input type="email" id="contactEmail" class="input-field" style="margin: 0; width: 240px;" placeholder="Email (e.g. alex@example.com)">
+            <input type="text" id="contactNotes" class="input-field" style="margin: 0; width: 200px;" placeholder="Notes (Optional)">
+            <button class="compose-btn" style="width: auto;" onclick="addContact()">+ Add Contact</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;" id="contactsListContainer">
+            Loading contacts...
+          </div>
+        </div>
+      `;
+      fetchContacts();
+    }
+
+    async function fetchContacts() {
+      try {
+        const res = await fetch('/api/contacts');
+        const data = await res.json();
+        const contacts = data.contacts || [];
+        const container = document.getElementById('contactsListContainer');
+
+        if (contacts.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-muted);">No contacts saved yet.</div>';
+          return;
+        }
+
+        container.innerHTML = contacts.map(c => `
+          <div class="contact-card">
+            <div>
+              <strong style="font-size: 1.05rem;">${c.name}</strong>
+              <div style="font-size: 0.85rem; color: var(--accent); margin-top: 2px;">${c.email}</div>
+              ${c.notes ? `<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">${c.notes}</div>` : ''}
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="logout-btn" onclick="quickComposeTo('${c.email}')">✉️ Send Email</button>
+              <button class="logout-btn" onclick="deleteContact('${c.id}')">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function addContact() {
+      const name = document.getElementById('contactName').value.trim();
+      const email = document.getElementById('contactEmail').value.trim();
+      const notes = document.getElementById('contactNotes').value.trim();
+
+      if (!name || !email) {
+        alert('Enter contact Name and Email');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/contacts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, notes }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          fetchContacts();
+        } else {
+          alert(data.error || 'Failed to add contact');
+        }
+      } catch (err) {
+        alert('Failed to add contact: ' + err.message);
+      }
+    }
+
+    async function deleteContact(id) {
+      await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
+      fetchContacts();
+    }
+
+    function quickComposeTo(email) {
+      openCompose();
+      document.getElementById('composeTo').value = email;
+    }
+
+    function renderMailboxesTab(pane) {
+      pane.innerHTML = `
+        <div style="padding: 32px; width: 100%;">
+          <h2>Manage Mailboxes</h2>
+          <p style="color: var(--text-muted); margin-bottom: 20px;">Create custom mailbox addresses for your domains:</p>
+          <div style="display: flex; gap: 12px; margin: 20px 0;">
+            <input type="text" id="newAddress" class="input-field" style="margin: 0; width: 220px;" placeholder="Username (e.g. alex)">
+            <select id="newDomain" class="input-field" style="margin: 0; width: 200px;">
+              <option value="terrorify.dev">@terrorify.dev</option>
+              <option value="minemares.com">@minemares.com</option>
+            </select>
+            <button class="compose-btn" style="width: auto;" onclick="createMailbox()">+ Create Mailbox</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+            ${userMailboxes.length === 0 ? '<div style="color: var(--text-muted);">No mailboxes created yet.</div>' : ''}
+            ${userMailboxes.map(m => `
+              <div style="padding: 18px 24px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong style="font-size: 1.05rem;">${m.address}</strong>
+                  <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Created ${new Date(m.created_at).toLocaleDateString()}</div>
+                </div>
+                <button class="logout-btn" onclick="deleteMailbox('${m.id}')">Delete</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    async function createMailbox() {
+      const address = document.getElementById('newAddress').value.trim();
+      const domain = document.getElementById('newDomain').value;
+
+      if (!address || !domain) {
+        alert('Enter a mailbox username');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/mailboxes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address, domain }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          await loadMailboxes();
+          renderMailboxesTab(document.getElementById('tabContent'));
+        }
+      } catch (err) {
+        alert('Failed to create mailbox: ' + err.message);
+      }
+    }
+
+    async function deleteMailbox(id) {
+      await fetch(`/api/mailboxes/${id}`, { method: 'DELETE' });
+      await loadMailboxes();
+      renderMailboxesTab(document.getElementById('tabContent'));
+    }
+
+    function openCompose() {
+      document.getElementById('composeModalTitle').innerText = 'New Email';
+      document.getElementById('composeTo').value = '';
+      document.getElementById('composeSubject').value = '';
+      document.getElementById('composeEditor').innerHTML = '';
+      document.getElementById('composeModal').classList.add('open');
+    }
+
+    function closeCompose() {
+      document.getElementById('composeModal').classList.remove('open');
+    }
+
+    async function sendMail() {
+      const from = document.getElementById('composeFromCustom').value.trim();
+      const to = document.getElementById('composeTo').value.trim();
+      const subject = document.getElementById('composeSubject').value.trim();
+      const html = document.getElementById('composeEditor').innerHTML;
+      const text = document.getElementById('composeEditor').innerText;
+      const sendBtn = document.getElementById('sendBtn');
+
+      if (!from || !to || !subject || (!html && !text)) {
+        alert('Please fill out all email fields (From, To, Subject, Message)');
+        return;
+      }
+
+      sendBtn.innerText = 'Sending...';
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from, to, subject, text, html }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeCompose();
+          alert('Email sent successfully!');
+          if (currentTab === 'sent') fetchMessages('sent');
+        } else {
+          alert('Sending error: ' + (data.error || 'Failed to send email'));
+        }
+      } catch (err) {
+        alert('Failed to send email: ' + err.message);
+      } finally {
+        sendBtn.innerText = 'Send 🚀';
+        sendBtn.disabled = false;
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
